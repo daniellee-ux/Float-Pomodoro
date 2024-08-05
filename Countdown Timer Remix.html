@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro | Countdown Timer (Clockwise Decrease)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0e5ec;
+        }
+        .container {
+            text-align: center;
+            background-color: #e0e5ec;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 
+                8px 8px 15px #a3b1c6, 
+                -8px -8px 15px #ffffff;
+        }
+        h1 {
+            margin-bottom: 1rem;
+            color: #4a4a4a;
+        }
+        .input-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        input {
+            font-size: 1rem;
+            padding: 0.5rem;
+            width: 80px;
+            margin: 0 0.5rem;
+            border: none;
+            background-color: #e0e5ec;
+            border-radius: 10px;
+            box-shadow: 
+                inset 2px 2px 5px #b8b9be, 
+                inset -3px -3px 7px #ffffff;
+        }
+        .button-group {
+            margin-bottom: 2rem;
+        }
+        button {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            background-color: #e0e5ec;
+            color: #4a4a4a;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 
+                5px 5px 10px #a3b1c6, 
+                -5px -5px 10px #ffffff;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            box-shadow: 
+                2px 2px 5px #a3b1c6, 
+                -2px -2px 5px #ffffff;
+        }
+        button:active {
+            box-shadow: 
+                inset 1px 1px 2px #a3b1c6, 
+                inset -1px -1px 2px #ffffff;
+        }
+        #countdown {
+            font-size: 2rem;
+            margin-top: 1rem;
+            color: #4a4a4a;
+        }
+        #pipVideo {
+            display: none;
+        }
+        canvas {
+            display: none;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .tab {
+            font-size: 0.9rem;
+            padding: 0.3rem 0.8rem;
+            margin: 0 0.25rem;
+            background-color: #e0e5ec;
+            color: #4a4a4a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 
+                3px 3px 6px #a3b1c6, 
+                -3px -3px 6px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .tab:hover, .tab.active {
+            box-shadow: 
+                inset 1px 1px 2px #a3b1c6, 
+                inset -1px -1px 2px #ffffff;
+        }
+        .timer-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        #timeTimer {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            background: #e0e5ec;
+            border-radius: 50%;
+            box-shadow: 
+                inset 5px 5px 10px #a3b1c6, 
+                inset -5px -5px 10px #ffffff;
+        }
+        #timeTimerDisk {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0%, red 0%);
+        }
+        #timeTimerOverlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #e0e5ec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #4a4a4a;
+            box-shadow: 
+                5px 5px 10px #a3b1c6, 
+                -5px -5px 10px #ffffff;
+        }
+        .author {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #a0a0a0;
+        }
+        .author a {
+            color: #a0a0a0;
+            text-decoration: none;
+        }
+        .author a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pomodoro | Countdown Timer</h1>
+        <div class="input-group">
+            <input type="number" id="minutes" placeholder="Min" min="0" step="1" value="5">
+            <input type="number" id="seconds" placeholder="Sec" min="0" max="59" step="1" value="0">
+        </div>
+        <div class="button-group">
+            <button id="startButton">Start</button>
+            <button id="pauseButton">Pause</button>
+            <button id="stopButton">Stop</button>
+        </div>
+        <div class="timer-display">
+            <div id="countdown">05:00</div>
+            <div id="timeTimer" style="display: none;">
+                <div id="timeTimerDisk"></div>
+                <div id="timeTimerOverlay">05:00</div>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab active" data-tab="numeric">Numeric</button>
+            <button class="tab" data-tab="timeTimer">Time Timer</button>
+        </div>
+        <div class="author">
+            Made by <a href="https://daniellee.work/" target="_blank">Daniel Lee</a>
+        </div>
+    </div>
+    <video id="pipVideo" muted></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const minutesInput = document.getElementById('minutes');
+        const secondsInput = document.getElementById('seconds');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const stopButton = document.getElementById('stopButton');
+        const countdownDisplay = document.getElementById('countdown');
+        const pipVideo = document.getElementById('pipVideo');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timeTimer = document.getElementById('timeTimer');
+        const timeTimerDisk = document.getElementById('timeTimerDisk');
+        const timeTimerOverlay = document.getElementById('timeTimerOverlay');
+
+        let countdownInterval;
+        let remainingTime;
+        let totalTime;
+        let isPaused = false;
+        let currentTab = 'numeric';
+
+        startButton.addEventListener('click', startCountdown);
+        pauseButton.addEventListener('click', togglePause);
+        stopButton.addEventListener('click', stopCountdown);
+
+        // Add event listeners for input changes
+        minutesInput.addEventListener('input', updatePreview);
+        secondsInput.addEventListener('input', updatePreview);
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                updateTimerDisplay();
+            });
+        });
+
+        function updatePreview() {
+            const minutes = parseInt(minutesInput.value) || 0;
+            const seconds = parseInt(secondsInput.value) || 0;
+            totalTime = remainingTime = minutes * 60 + seconds;
+            updateTimerDisplay();
+        }
+
+        function startCountdown() {
+            const minutes = parseInt(minutesInput.value) || 0;
+            const seconds = parseInt(secondsInput.value) || 0;
+            if (minutes === 0 && seconds === 0) {
+                alert('Please enter a valid time.');
+                return;
+            }
+
+            totalTime = remainingTime = minutes * 60 + seconds;
+            updateTimerDisplay();
+
+            countdownInterval = setInterval(() => {
+                if (!isPaused) {
+                    remainingTime--;
+                    if (remainingTime < 0) {
+                        clearInterval(countdownInterval);
+                        alert('Countdown finished!');
+                        return;
+                    }
+                    updateTimerDisplay();
+                }
+            }, 1000);
+
+            startPictureInPicture();
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            stopButton.disabled = false;
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+        }
+
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+            remainingTime = totalTime;
+            updateTimerDisplay();
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            stopButton.disabled = true;
+            isPaused = false;
+            pauseButton.textContent = 'Pause';
+            if (document.pictureInPictureElement) {
+                document.exitPictureInPicture();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            const timeString = `${padZero(minutes)}:${padZero(seconds)}`;
+            countdownDisplay.textContent = timeString;
+            timeTimerOverlay.textContent = timeString;
+            
+            const progress = 1 - (remainingTime / totalTime);
+            timeTimerDisk.style.background = `conic-gradient(from 0deg, transparent ${progress * 100}%, red ${progress * 100}%)`;
+            
+            if (currentTab === 'numeric') {
+                countdownDisplay.style.display = 'block';
+                timeTimer.style.display = 'none';
+            } else {
+                countdownDisplay.style.display = 'none';
+                timeTimer.style.display = 'block';
+            }
+            
+            drawCountdown();
+        }
+
+        function padZero(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        function drawCountdown() {
+            canvas.width = 200;
+            canvas.height = 200;
+            ctx.fillStyle = '#e0e5ec';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (currentTab === 'numeric') {
+                ctx.fillStyle = '#4a4a4a';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(countdownDisplay.textContent, canvas.width / 2, canvas.height / 2);
+            } else {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = 90;
+
+                // Outer circle (light shadow)
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = '#f0f5fc';
+                ctx.fill();
+
+                // Inner circle (dark shadow)
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - 2, 0, 2 * Math.PI);
+                ctx.fillStyle = '#d1d9e6';
+                ctx.fill();
+
+                // Red progress arc
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                const progress = 1 - (remainingTime / totalTime);
+                ctx.arc(centerX, centerY, radius - 5, -Math.PI / 2, (-Math.PI / 2) + (2 * Math.PI * progress), true);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+
+                // Inner white circle
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - 15, 0, 2 * Math.PI);
+                ctx.fillStyle = '#e0e5ec';
+                ctx.fill();
+
+                // Time text
+                ctx.fillStyle = '#4a4a4a';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(timeTimerOverlay.textContent, centerX, centerY);
+            }
+        }
+
+        async function startPictureInPicture() {
+            drawCountdown();
+            const stream = canvas.captureStream();
+            pipVideo.srcObject = stream;
+            await pipVideo.play();
+
+            try {
+                await pipVideo.requestPictureInPicture();
+            } catch (error) {
+                console.error('Failed to enter Picture-in-Picture mode:', error);
+            }
+        }
+
+        // Set initial values and display
+        minutesInput.value = '5';
+        secondsInput.value = '00';
+        totalTime = remainingTime = 5 * 60;
+        updateTimerDisplay();
+    </script>
+</body>
+</html>
