@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro | Countdown Timer (Clockwise Decrease)</title>
+    <title>Pomodoro Countdown Timer | Boost Your Productivity</title>
+    <meta name="description" content="Enhance your focus and productivity with our Pomodoro Countdown Timer. Features a customizable timer, visual time tracker, and Picture-in-Picture mode for multitasking.">
+    <meta name="keywords" content="pomodoro timer, countdown timer, productivity tool, focus timer, time management">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -211,16 +213,16 @@
         let totalTime;
         let isPaused = false;
         let currentTab = 'numeric';
+        let isTimerRunning = false;
+        let lastUpdateTime;
 
         startButton.addEventListener('click', startCountdown);
         pauseButton.addEventListener('click', togglePause);
         stopButton.addEventListener('click', stopCountdown);
 
-        // Add event listeners for input changes
         minutesInput.addEventListener('input', updatePreview);
         secondsInput.addEventListener('input', updatePreview);
 
-        // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -248,31 +250,43 @@
             totalTime = remainingTime = minutes * 60 + seconds;
             updateTimerDisplay();
 
-            countdownInterval = setInterval(() => {
-                if (!isPaused) {
-                    remainingTime--;
-                    if (remainingTime < 0) {
-                        clearInterval(countdownInterval);
-                        alert('Countdown finished!');
-                        return;
-                    }
-                    updateTimerDisplay();
-                }
-            }, 1000);
-
+            isTimerRunning = true;
+            lastUpdateTime = Date.now();
             startPictureInPicture();
             startButton.disabled = true;
             pauseButton.disabled = false;
             stopButton.disabled = false;
+
+            updateTimer();
+        }
+
+        function updateTimer() {
+            if (isTimerRunning && !isPaused) {
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
+                lastUpdateTime = currentTime;
+
+                remainingTime -= deltaTime;
+                if (remainingTime <= 0) {
+                    stopCountdown();
+                    alert('Countdown finished!');
+                    return;
+                }
+                updateTimerDisplay();
+            }
+            requestAnimationFrame(updateTimer);
         }
 
         function togglePause() {
             isPaused = !isPaused;
             pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+            if (!isPaused) {
+                lastUpdateTime = Date.now();
+            }
         }
 
         function stopCountdown() {
-            clearInterval(countdownInterval);
+            isTimerRunning = false;
             remainingTime = totalTime;
             updateTimerDisplay();
             startButton.disabled = false;
@@ -287,7 +301,7 @@
 
         function updateTimerDisplay() {
             const minutes = Math.floor(remainingTime / 60);
-            const seconds = remainingTime % 60;
+            const seconds = Math.floor(remainingTime % 60);
             const timeString = `${padZero(minutes)}:${padZero(seconds)}`;
             countdownDisplay.textContent = timeString;
             timeTimerOverlay.textContent = timeString;
@@ -307,7 +321,7 @@
         }
 
         function padZero(num) {
-            return num.toString().padStart(2, '0');
+            return Math.floor(num).toString().padStart(2, '0');
         }
 
         function drawCountdown() {
@@ -327,19 +341,16 @@
                 const centerY = canvas.height / 2;
                 const radius = 90;
 
-                // Outer circle (light shadow)
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
                 ctx.fillStyle = '#f0f5fc';
                 ctx.fill();
 
-                // Inner circle (dark shadow)
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius - 2, 0, 2 * Math.PI);
                 ctx.fillStyle = '#d1d9e6';
                 ctx.fill();
 
-                // Red progress arc
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 const progress = 1 - (remainingTime / totalTime);
@@ -348,13 +359,11 @@
                 ctx.fillStyle = 'red';
                 ctx.fill();
 
-                // Inner white circle
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius - 15, 0, 2 * Math.PI);
                 ctx.fillStyle = '#e0e5ec';
                 ctx.fill();
 
-                // Time text
                 ctx.fillStyle = '#4a4a4a';
                 ctx.font = '24px Arial';
                 ctx.textAlign = 'center';
@@ -364,6 +373,10 @@
         }
 
         async function startPictureInPicture() {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            }
+
             drawCountdown();
             const stream = canvas.captureStream();
             pipVideo.srcObject = stream;
@@ -376,10 +389,36 @@
             }
         }
 
+        // Use Page Visibility API to keep PiP updating
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden && isTimerRunning) {
+                // When page is not visible, use setTimeout to keep updating
+                function update() {
+                    if (document.hidden && isTimerRunning) {
+                        const currentTime = Date.now();
+                        const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
+                        lastUpdateTime = currentTime;
+
+                        remainingTime -= deltaTime;
+                        if (remainingTime <= 0) {
+                            stopCountdown();
+                            alert('Countdown finished!');
+                            return;
+                        }
+                        updateTimerDisplay();
+                        setTimeout(update, 1000);
+                    }
+                }
+                update();
+            } else {
+                lastUpdateTime = Date.now();
+            }
+        });
+
         // Set initial values and display
-        minutesInput.value = '5';
+        minutesInput.value = '25';
         secondsInput.value = '00';
-        totalTime = remainingTime = 5 * 60;
+        totalTime = remainingTime = 25 * 60;
         updateTimerDisplay();
     </script>
 </body>
