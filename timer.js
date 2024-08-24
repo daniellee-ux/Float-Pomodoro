@@ -76,9 +76,7 @@ function startCountdown() {
     };
     worker.postMessage({ action: 'start', time: totalTime });
 
-    startPictureInPicture().catch(error => {
-        console.error('PiP failed, but timer will continue:', error);
-    });
+    startPictureInPicture();
 }
 
 function togglePause() {
@@ -184,14 +182,8 @@ function drawCountdown() {
 }
 
 async function startPictureInPicture() {
-    const isPiPSupported = document.pictureInPictureEnabled || 
-                           (pipVideo.webkitSupportsPresentationMode && 
-                            typeof pipVideo.webkitSetPresentationMode === 'function');
-
-    if (!isPiPSupported) {
-        console.warn('Picture-in-Picture not supported');
-        alert('Picture-in-Picture mode is not supported in this browser. The timer will continue to run in the background.');
-        return;
+    if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
     }
 
     drawCountdown();
@@ -200,16 +192,10 @@ async function startPictureInPicture() {
     await pipVideo.play();
 
     try {
-        if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === 'function') {
-            // Safari
-            await pipVideo.webkitSetPresentationMode('picture-in-picture');
-        } else {
-            // Other browsers
-            await pipVideo.requestPictureInPicture();
-        }
-        
+        await pipVideo.requestPictureInPicture();
+        // Start a loop to keep updating the PiP window
         function updatePiP() {
-            if ((pipVideo.webkitPresentationMode === 'picture-in-picture') || document.pictureInPictureElement) {
+            if (document.pictureInPictureElement) {
                 drawCountdown();
                 requestAnimationFrame(updatePiP);
             }
@@ -217,19 +203,38 @@ async function startPictureInPicture() {
         updatePiP();
     } catch (error) {
         console.error('Failed to enter Picture-in-Picture mode:', error);
-        alert('Failed to enter Picture-in-Picture mode. The timer will continue to run in the background.');
     }
 }
 
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden && isTimerRunning) {
-        // Refresh the display when the tab becomes visible again
-        updateTimerDisplay();
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden && isTimerRunning) {
+        cancelAnimationFrame(animationFrameId);
+        clearInterval(intervalId);
+        lastUpdateTime = Date.now();
+        intervalId = setInterval(() => {
+            if (isTimerRunning && !isPaused) {
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
+                lastUpdateTime = currentTime;
+
+                remainingTime -= deltaTime;
+                if (remainingTime <= 0) {
+                    stopCountdown();
+                    alert('Countdown finished!');
+                    return;
+                }
+                updateTimerDisplay();
+                drawCountdown(); // Ensure the canvas is updated
+            }
+        }, 1000);
+    } else {
+        lastUpdateTime = Date.now();
+        clearInterval(intervalId);
+        animationFrameId = requestAnimationFrame(updateTimer);
     }
 });
 
 minutesInput.value = '25';
 secondsInput.value = '00';
 totalTime = remainingTime = 25 * 60;
-updateTimerDisplay();
 updateTimerDisplay();
