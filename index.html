@@ -6,12 +6,27 @@
     <title>Pomodoro Countdown Timer | Boost Your Productivity</title>
     <meta name="description" content="Enhance your focus and productivity with our Pomodoro Countdown Timer. Features a customizable timer, visual time tracker, and Picture-in-Picture mode for multitasking.">
     <meta name="keywords" content="pomodoro timer, countdown timer, productivity tool, focus timer, time management">
+    <meta property="og:title" content="Pomodoro Countdown Timer | Boost Your Productivity">
+    <meta property="og:description" content="Enhance your focus and productivity with our Pomodoro Countdown Timer. Features a customizable timer, visual time tracker, and Picture-in-Picture mode for multitasking.">
+    <meta property="og:image" content="https://i.imgur.com/SodxwNV.png">
+    <meta property="og:url" content="https://daniellee-ux.github.io/Float-Pomodoro/">
+    <meta property="og:type" content="website">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Pomodoro Countdown Timer",
+      "description": "Enhance your focus and productivity with our Pomodoro Countdown Timer. Features a customizable timer, visual time tracker, and Picture-in-Picture mode for multitasking."
+    }
+    </script>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="https://i.imgur.com/SodxwNV.png">
 </head>
 <body>
-    <div class="container">
+    <header>
         <h1>Pomodoro | Countdown Timer</h1>
+    </header>
+    <main class="container">
         <div class="input-group">
             <input type="number" id="minutes" placeholder="Min" min="0" step="1" value="5">
             <input type="number" id="seconds" placeholder="Sec" min="0" max="59" step="1" value="0">
@@ -32,10 +47,10 @@
             <button class="tab active" data-tab="numeric">Numeric</button>
             <button class="tab" data-tab="timeTimer">Time Timer</button>
         </div>
-        <div class="author">
-            Made by <a href="https://daniellee.work/" target="_blank">Daniel Lee</a>
-        </div>
-    </div>
+    </main>
+    <footer class="author">
+        Made by <a href="https://daniellee.work/" target="_blank">Daniel Lee</a>
+    </footer>
     <video id="pipVideo" muted></video>
     <canvas id="canvas"></canvas>
 
