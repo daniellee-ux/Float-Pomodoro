@@ -214,6 +214,7 @@ document.addEventListener("visibilitychange", function() {
                     return;
                 }
                 updateTimerDisplay();
+                drawCountdown(); // Ensure the canvas is updated
             }
         }, 1000);
     } else {
