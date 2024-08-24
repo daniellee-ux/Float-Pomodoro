@@ -166,15 +166,14 @@ footer {
     width: 100%;
     text-align: center;
     padding: 20px 0;
-    background-color: #f0f0f0; /* Match the body background color */
 }
 .author {
     display: inline-block;
     font-size: 0.8rem;
-    color: #a0a0a0;
+    color: #4a4a4a; /* Changed from #a0a0a0 to match the text color used elsewhere */
 }
 .author a {
-    color: #e0e5ec;
+    color: #4a4a4a; /* Changed from #e0e5ec to match the text color */
     text-decoration: none;
 }
 .author a:hover {
