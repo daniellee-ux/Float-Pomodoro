@@ -19,6 +19,7 @@ let currentTab = 'numeric';
 let isTimerRunning = false;
 let lastUpdateTime;
 let animationFrameId;
+let intervalId;
 
 startButton.addEventListener('click', startCountdown);
 pauseButton.addEventListener('click', togglePause);
@@ -102,6 +103,7 @@ function stopCountdown() {
         document.exitPictureInPicture();
     }
     cancelAnimationFrame(animationFrameId);
+    clearInterval(intervalId);
 }
 
 function updateTimerDisplay() {
@@ -197,17 +199,26 @@ async function startPictureInPicture() {
 document.addEventListener("visibilitychange", function() {
     if (document.hidden && isTimerRunning) {
         cancelAnimationFrame(animationFrameId);
+        clearInterval(intervalId);
         lastUpdateTime = Date.now();
-        function update() {
-            if (document.hidden && isTimerRunning) {
-                updateTimer();
-                setTimeout(update, 1000);
+        intervalId = setInterval(() => {
+            if (isTimerRunning && !isPaused) {
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
+                lastUpdateTime = currentTime;
+
+                remainingTime -= deltaTime;
+                if (remainingTime <= 0) {
+                    stopCountdown();
+                    alert('Countdown finished!');
+                    return;
+                }
+                updateTimerDisplay();
             }
-        }
-        update();
+        }, 1000);
     } else {
         lastUpdateTime = Date.now();
-        cancelAnimationFrame(animationFrameId);
+        clearInterval(intervalId);
         animationFrameId = requestAnimationFrame(updateTimer);
     }
 });
