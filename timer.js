@@ -191,28 +191,28 @@ async function startPictureInPicture() {
     }
 
     console.log('Drawing countdown');
-    drawCountdown();
-    
+    drawCountdown(); // Ensure the canvas is drawn
+
     // Ensure the canvas has content before capturing
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const stream = canvas.captureStream(30);
     console.log('Stream tracks:', stream.getTracks());
-    
+
     const videoTrack = stream.getVideoTracks()[0];
     if (videoTrack) {
         console.log('Video track settings:', videoTrack.getSettings());
     } else {
         console.error('No video track found in the stream');
     }
-    
+
     pipVideo.srcObject = stream;
     console.log('Stream set to video element');
-    
+
     try {
         await pipVideo.play();
         console.log('Video playback started');
-        
+
         // Wait a short time to ensure video is actually playing
         await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -226,7 +226,7 @@ async function startPictureInPicture() {
             await pipVideo.requestPictureInPicture();
             console.log('Standard PiP mode activated');
         }
-        
+
         // Force an update after entering PiP mode
         setTimeout(() => {
             console.log('Forcing update after PiP activation');
@@ -238,29 +238,35 @@ async function startPictureInPicture() {
     }
 }
 
+let isPiPLoggingEnabled = true; // Control logging in PiP
+
 function updatePiP() {
-    console.log('updatePiP called');
     if (document.pictureInPictureElement || 
         (pipVideo.webkitPresentationMode && pipVideo.webkitPresentationMode === "picture-in-picture")) {
-        console.log('PiP is active, updating');
+        if (isPiPLoggingEnabled) {
+            console.log('PiP is active, updating');
+        }
         drawCountdown();
         requestAnimationFrame(updatePiP);
     } else {
-        console.log('PiP not active, stopping updates');
+        if (isPiPLoggingEnabled) {
+            console.log('PiP not active, stopping updates');
+        }
+        isPiPLoggingEnabled = false; // Disable logging when exiting PiP
     }
 }
 
 // Ensure this event listener is present
 pipVideo.addEventListener('webkitpresentationmodechanged', (event) => {
-    console.log('Presentation mode changed:', event.target.webkitPresentationMode);
     if (event.target.webkitPresentationMode === "picture-in-picture") {
+        isPiPLoggingEnabled = true; // Re-enable logging when entering PiP
         console.log("Entered PiP mode in Safari");
         setTimeout(() => {
-            console.log('Forcing update after Safari PiP mode change');
             drawCountdown();
             updatePiP();
         }, 100);
     } else if (event.target.webkitPresentationMode === "inline") {
+        isPiPLoggingEnabled = false; // Disable logging when exiting PiP
         console.log("Exited PiP mode in Safari");
     }
 });
