@@ -184,27 +184,40 @@ function drawCountdown() {
 }
 
 async function startPictureInPicture() {
+    console.log('Starting Picture-in-Picture');
     if (document.pictureInPictureElement) {
+        console.log('Exiting existing PiP');
         await document.exitPictureInPicture().catch(console.error);
     }
 
+    console.log('Drawing countdown');
     drawCountdown();
-    const stream = canvas.captureStream(30); // Specify frame rate
+    const stream = canvas.captureStream(30);
+    console.log('Stream created:', stream);
     pipVideo.srcObject = stream;
-    await pipVideo.play().catch(console.error);
+    console.log('Stream set to video element');
+    
+    try {
+        await pipVideo.play();
+        console.log('Video playback started');
+    } catch (error) {
+        console.error('Error starting video playback:', error);
+    }
 
     try {
         if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === "function") {
-            // Safari
+            console.log('Using Safari PiP mode');
             await pipVideo.webkitSetPresentationMode("picture-in-picture");
-            // Force an update after entering PiP mode
+            console.log('Safari PiP mode activated');
             setTimeout(() => {
+                console.log('Forcing update after Safari PiP activation');
                 drawCountdown();
                 updatePiP();
             }, 100);
         } else {
-            // Chrome, Edge, and other browsers
+            console.log('Using standard PiP mode');
             await pipVideo.requestPictureInPicture();
+            console.log('Standard PiP mode activated');
         }
         updatePiP();
     } catch (error) {
@@ -215,22 +228,106 @@ async function startPictureInPicture() {
 function updatePiP() {
     if (document.pictureInPictureElement || 
         (pipVideo.webkitPresentationMode && pipVideo.webkitPresentationMode === "picture-in-picture")) {
+        console.log('Updating PiP');
         drawCountdown();
         requestAnimationFrame(updatePiP);
+    } else {
+        console.log('PiP not active, stopping updates');
     }
 }
 
+function drawCountdown() {
+    console.log('Drawing countdown, current time:', remainingTime);
+    canvas.width = 200;
+    canvas.height = 200;
+    ctx.fillStyle = '#e0e5ec';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (currentTab === 'numeric') {
+        ctx.fillStyle = '#4a4a4a';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(countdownDisplay.textContent, canvas.width / 2, canvas.height / 2);
+    } else {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 90;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f0f5fc';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius - 2, 0, 2* Math.PI);
+        ctx.fillStyle = '#d1d9e6';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        const progress = 1 - (remainingTime / totalTime);
+        ctx.arc(centerX, centerY, radius - 5, -Math.PI / 2, (-Math.PI / 2) + (2 * Math.PI * progress), true);
+        ctx.lineTo(centerX, centerY);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius - 15, 0, 2* Math.PI);
+        ctx.fillStyle = '#e0e5ec';
+        ctx.fill();
+
+        ctx.fillStyle = '#4a4a4a';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(timeTimerOverlay.textContent, centerX, centerY);
+    }
+    console.log('Countdown drawn');
+}
+
 pipVideo.addEventListener('webkitpresentationmodechanged', (event) => {
+    console.log('Presentation mode changed:', event.target.webkitPresentationMode);
     if (event.target.webkitPresentationMode === "picture-in-picture") {
         console.log("Entered PiP mode in Safari");
-        // Force an update after entering PiP mode
         setTimeout(() => {
+            console.log('Forcing update after Safari PiP mode change');
             drawCountdown();
             updatePiP();
         }, 100);
     } else if (event.target.webkitPresentationMode === "inline") {
         console.log("Exited PiP mode in Safari");
     }
+});
+
+// Add this new function to log the current state
+function logState() {
+    console.log('Current state:');
+    console.log('- isTimerRunning:', isTimerRunning);
+    console.log('- isPaused:', isPaused);
+    console.log('- remainingTime:', remainingTime);
+    console.log('- totalTime:', totalTime);
+    console.log('- currentTab:', currentTab);
+    console.log('- PiP active:', !!document.pictureInPictureElement || (pipVideo.webkitPresentationMode === "picture-in-picture"));
+}
+
+// Call logState at key points
+startButton.addEventListener('click', () => {
+    console.log('Start button clicked');
+    logState();
+    startCountdown();
+});
+
+pauseButton.addEventListener('click', () => {
+    console.log('Pause button clicked');
+    logState();
+    togglePause();
+});
+
+stopButton.addEventListener('click', () => {
+    console.log('Stop button clicked');
+    logState();
+    stopCountdown();
 });
 
 document.addEventListener("visibilitychange", function() {
