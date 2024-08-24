@@ -76,7 +76,9 @@ function startCountdown() {
     };
     worker.postMessage({ action: 'start', time: totalTime });
 
-    startPictureInPicture();
+    startPictureInPicture().catch(error => {
+        console.error('PiP failed, but timer will continue:', error);
+    });
 }
 
 function togglePause() {
@@ -192,10 +194,25 @@ async function startPictureInPicture() {
     await pipVideo.play();
 
     try {
-        await pipVideo.requestPictureInPicture();
-        // Start a loop to keep updating the PiP window
+        if (currentBrowser === 'Safari') {
+            // Safari requires the video to have a source
+            const videoTrack = stream.getVideoTracks()[0];
+            const mediaStream = new MediaStream([videoTrack]);
+            pipVideo.srcObject = mediaStream;
+            await pipVideo.play();
+            // Use webkitSetPresentationMode for Safari
+            if (pipVideo.webkitSetPresentationMode) {
+                pipVideo.webkitSetPresentationMode('picture-in-picture');
+            } else {
+                throw new Error('PiP not supported in this version of Safari');
+            }
+        } else {
+            await pipVideo.requestPictureInPicture();
+        }
+        
         function updatePiP() {
-            if (document.pictureInPictureElement) {
+            if ((currentBrowser === 'Safari' && pipVideo.webkitPresentationMode === 'picture-in-picture') ||
+                (currentBrowser !== 'Safari' && document.pictureInPictureElement)) {
                 drawCountdown();
                 requestAnimationFrame(updatePiP);
             }
@@ -203,10 +220,19 @@ async function startPictureInPicture() {
         updatePiP();
     } catch (error) {
         console.error('Failed to enter Picture-in-Picture mode:', error);
+        alert('Picture-in-Picture mode is not supported in this browser. The timer will continue to run in the background.');
     }
 }
+
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && isTimerRunning) {
+        // Refresh the display when the tab becomes visible again
+        updateTimerDisplay();
+    }
+});
 
 minutesInput.value = '25';
 secondsInput.value = '00';
 totalTime = remainingTime = 25 * 60;
+updateTimerDisplay();
 updateTimerDisplay();
