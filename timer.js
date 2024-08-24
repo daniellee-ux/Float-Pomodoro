@@ -18,6 +18,7 @@ let isPaused = false;
 let currentTab = 'numeric';
 let isTimerRunning = false;
 let lastUpdateTime;
+let animationFrameId;
 
 startButton.addEventListener('click', startCountdown);
 pauseButton.addEventListener('click', togglePause);
@@ -77,7 +78,7 @@ function updateTimer() {
         }
         updateTimerDisplay();
     }
-    requestAnimationFrame(updateTimer);
+    animationFrameId = requestAnimationFrame(updateTimer);
 }
 
 function togglePause() {
@@ -100,6 +101,7 @@ function stopCountdown() {
     if (document.pictureInPictureElement) {
         document.exitPictureInPicture();
     }
+    cancelAnimationFrame(animationFrameId);
 }
 
 function updateTimerDisplay() {
@@ -192,33 +194,24 @@ async function startPictureInPicture() {
     }
 }
 
-// Use Page Visibility API to keep PiP updating
 document.addEventListener("visibilitychange", function() {
     if (document.hidden && isTimerRunning) {
-        // When page is not visible, use setTimeout to keep updating
+        cancelAnimationFrame(animationFrameId);
+        lastUpdateTime = Date.now();
         function update() {
             if (document.hidden && isTimerRunning) {
-                const currentTime = Date.now();
-                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
-                lastUpdateTime = currentTime;
-
-                remainingTime -= deltaTime;
-                if (remainingTime <= 0) {
-                    stopCountdown();
-                    alert('Countdown finished!');
-                    return;
-                }
-                updateTimerDisplay();
+                updateTimer();
                 setTimeout(update, 1000);
             }
         }
         update();
     } else {
         lastUpdateTime = Date.now();
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(updateTimer);
     }
 });
 
-// Set initial values and display
 minutesInput.value = '25';
 secondsInput.value = '00';
 totalTime = remainingTime = 25 * 60;
