@@ -354,7 +354,7 @@ document.addEventListener("visibilitychange", function() {
     } else {
         lastUpdateTime = Date.now();
         clearInterval(intervalId);
-        animationFrameId = requestAnimationFrame(updateTimer);
+        animationFrameId = requestAnimationFrame(updatePiP); // Changed from updateTimer to updatePiP
     }
 });
 
