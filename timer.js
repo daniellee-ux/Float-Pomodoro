@@ -189,7 +189,7 @@ async function startPictureInPicture() {
     }
 
     drawCountdown();
-    const stream = canvas.captureStream();
+    const stream = canvas.captureStream(30); // Specify frame rate
     pipVideo.srcObject = stream;
     await pipVideo.play().catch(console.error);
 
@@ -197,6 +197,11 @@ async function startPictureInPicture() {
         if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === "function") {
             // Safari
             await pipVideo.webkitSetPresentationMode("picture-in-picture");
+            // Force an update after entering PiP mode
+            setTimeout(() => {
+                drawCountdown();
+                updatePiP();
+            }, 100);
         } else {
             // Chrome, Edge, and other browsers
             await pipVideo.requestPictureInPicture();
@@ -218,7 +223,11 @@ function updatePiP() {
 pipVideo.addEventListener('webkitpresentationmodechanged', (event) => {
     if (event.target.webkitPresentationMode === "picture-in-picture") {
         console.log("Entered PiP mode in Safari");
-        updatePiP();
+        // Force an update after entering PiP mode
+        setTimeout(() => {
+            drawCountdown();
+            updatePiP();
+        }, 100);
     } else if (event.target.webkitPresentationMode === "inline") {
         console.log("Exited PiP mode in Safari");
     }
