@@ -11,46 +11,55 @@
     <meta property="og:image" content="https://i.imgur.com/SodxwNV.png">
     <meta property="og:url" content="https://daniellee-ux.github.io/Float-Pomodoro/">
     <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "Pomodoro Countdown Timer",
-      "description": "Enhance your focus and productivity with our Pomodoro Countdown Timer. Features a customizable timer, visual time tracker, and Picture-in-Picture mode for multitasking."
+      "description": "Enhance your focus and productivity with our Pomodoro Countdown Timer. Features a customizable timer, visual time tracker, and Picture-in-Picture mode for multitasking.",
+      "applicationCategory": "Productivity",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
     }
     </script>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="https://i.imgur.com/SodxwNV.png">
 </head>
 <body>
-    <header>
-        <h1>Pomodoro | Countdown Timer</h1>
-    </header>
-    <main class="container">
-        <div class="input-group">
-            <input type="number" id="minutes" placeholder="Min" min="0" step="1" value="5">
-            <input type="number" id="seconds" placeholder="Sec" min="0" max="59" step="1" value="0">
-        </div>
-        <div class="button-group">
-            <button id="startButton">Start</button>
-            <button id="pauseButton">Pause</button>
-            <button id="stopButton">Stop</button>
-        </div>
-        <div class="timer-display">
-            <div id="countdown">05:00</div>
-            <div id="timeTimer" style="display: none;">
-                <div id="timeTimerDisk"></div>
-                <div id="timeTimerOverlay">05:00</div>
+    <div class="page-container">
+        <header>
+            <h1>Pomodoro | Countdown Timer</h1>
+        </header>
+        <main class="container">
+            <div class="input-group">
+                <input type="number" id="minutes" placeholder="Min" min="0" step="1" value="5" aria-label="Minutes">
+                <input type="number" id="seconds" placeholder="Sec" min="0" max="59" step="1" value="0" aria-label="Seconds">
             </div>
-        </div>
-        <div class="tabs">
-            <button class="tab active" data-tab="numeric">Numeric</button>
-            <button class="tab" data-tab="timeTimer">Time Timer</button>
-        </div>
-    </main>
-    <footer class="author">
-        Made by <a href="https://daniellee.work/" target="_blank">Daniel Lee</a>
-    </footer>
+            <div class="button-group">
+                <button id="startButton" aria-label="Start timer">Start</button>
+                <button id="pauseButton" aria-label="Pause timer">Pause</button>
+                <button id="stopButton" aria-label="Stop timer">Stop</button>
+            </div>
+            <div class="timer-display">
+                <div id="countdown">05:00</div>
+                <div id="timeTimer" style="display: none;">
+                    <div id="timeTimerDisk"></div>
+                    <div id="timeTimerOverlay">05:00</div>
+                </div>
+            </div>
+            <div class="tabs">
+                <button class="tab active" data-tab="numeric">Numeric</button>
+                <button class="tab" data-tab="timeTimer">Time Timer</button>
+            </div>
+        </main>
+        <footer class="author">
+            Made with ♥️ by <a href="https://daniellee.work/" target="_blank">Daniel Lee</a>
+        </footer>
+    </div>
     <video id="pipVideo" muted></video>
     <canvas id="canvas"></canvas>
 
