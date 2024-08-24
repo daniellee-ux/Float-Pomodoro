@@ -100,6 +100,8 @@ function stopCountdown() {
     pauseButton.textContent = 'Pause';
     if (document.pictureInPictureElement) {
         document.exitPictureInPicture();
+    } else if (pipVideo.webkitPresentationMode === "picture-in-picture") {
+        pipVideo.webkitSetPresentationMode("inline");
     }
     if (worker) {
         worker.postMessage({ action: 'stop' });
@@ -192,10 +194,16 @@ async function startPictureInPicture() {
     await pipVideo.play();
 
     try {
-        await pipVideo.requestPictureInPicture();
+        if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === "function") {
+            // Safari
+            pipVideo.webkitSetPresentationMode("picture-in-picture");
+        } else {
+            // Chrome, Edge, and other browsers
+            await pipVideo.requestPictureInPicture();
+        }
         // Start a loop to keep updating the PiP window
         function updatePiP() {
-            if (document.pictureInPictureElement) {
+            if (document.pictureInPictureElement || pipVideo.webkitPresentationMode === "picture-in-picture") {
                 drawCountdown();
                 requestAnimationFrame(updatePiP);
             }
@@ -205,6 +213,14 @@ async function startPictureInPicture() {
         console.error('Failed to enter Picture-in-Picture mode:', error);
     }
 }
+
+pipVideo.addEventListener('webkitpresentationmodechanged', (event) => {
+    if (event.target.webkitPresentationMode === "picture-in-picture") {
+        console.log("Entered PiP mode in Safari");
+    } else if (event.target.webkitPresentationMode === "inline") {
+        console.log("Exited PiP mode in Safari");
+    }
+});
 
 document.addEventListener("visibilitychange", function() {
     if (document.hidden && isTimerRunning) {
