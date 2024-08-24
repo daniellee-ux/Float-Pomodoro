@@ -16,7 +16,7 @@ let remainingTime;
 let totalTime;
 let isPaused = false;
 let currentTab = 'numeric';
-let isTimerRunning = false;MINIMAL_VIDEO_DATA
+let isTimerRunning = false;
 let lastUpdateTime;
 let animationFrameId;
 let intervalId;
@@ -185,13 +185,17 @@ function drawCountdown() {
 
 async function startPictureInPicture() {
     if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
+        document.exitPictureInPicture().catch(error => {
+            console.error('Failed to exit Picture-in-Picture mode:', error);
+        });
     }
 
     drawCountdown();
     const stream = canvas.captureStream();
     pipVideo.srcObject = stream;
-    await pipVideo.play();
+    pipVideo.play().catch(error => {
+        console.error('Failed to play video:', error);
+    });
 
     try {
         if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === "function") {
@@ -199,7 +203,7 @@ async function startPictureInPicture() {
             pipVideo.webkitSetPresentationMode("picture-in-picture");
         } else {
             // Chrome, Edge, and other browsers
-            await pipVideo.requestPictureInPicture();
+            pipVideo.requestPictureInPicture();
         }
         // Start a loop to keep updating the PiP window
         function updatePiP() {
