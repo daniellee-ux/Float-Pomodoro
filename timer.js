@@ -184,8 +184,14 @@ function drawCountdown() {
 }
 
 async function startPictureInPicture() {
-    if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
+    const isPiPSupported = document.pictureInPictureEnabled || 
+                           (pipVideo.webkitSupportsPresentationMode && 
+                            typeof pipVideo.webkitSetPresentationMode === 'function');
+
+    if (!isPiPSupported) {
+        console.warn('Picture-in-Picture not supported');
+        alert('Picture-in-Picture mode is not supported in this browser. The timer will continue to run in the background.');
+        return;
     }
 
     drawCountdown();
@@ -194,25 +200,16 @@ async function startPictureInPicture() {
     await pipVideo.play();
 
     try {
-        if (currentBrowser === 'Safari') {
-            // Safari requires the video to have a source
-            const videoTrack = stream.getVideoTracks()[0];
-            const mediaStream = new MediaStream([videoTrack]);
-            pipVideo.srcObject = mediaStream;
-            await pipVideo.play();
-            // Use webkitSetPresentationMode for Safari
-            if (pipVideo.webkitSetPresentationMode) {
-                pipVideo.webkitSetPresentationMode('picture-in-picture');
-            } else {
-                throw new Error('PiP not supported in this version of Safari');
-            }
+        if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === 'function') {
+            // Safari
+            await pipVideo.webkitSetPresentationMode('picture-in-picture');
         } else {
+            // Other browsers
             await pipVideo.requestPictureInPicture();
         }
         
         function updatePiP() {
-            if ((currentBrowser === 'Safari' && pipVideo.webkitPresentationMode === 'picture-in-picture') ||
-                (currentBrowser !== 'Safari' && document.pictureInPictureElement)) {
+            if ((pipVideo.webkitPresentationMode === 'picture-in-picture') || document.pictureInPictureElement) {
                 drawCountdown();
                 requestAnimationFrame(updatePiP);
             }
@@ -220,7 +217,7 @@ async function startPictureInPicture() {
         updatePiP();
     } catch (error) {
         console.error('Failed to enter Picture-in-Picture mode:', error);
-        alert('Picture-in-Picture mode is not supported in this browser. The timer will continue to run in the background.');
+        alert('Failed to enter Picture-in-Picture mode. The timer will continue to run in the background.');
     }
 }
 
