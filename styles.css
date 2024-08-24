@@ -26,8 +26,8 @@ header {
 }
 
 .container {
-    width: 100%;
-    max-width: 600px;
+    width: 80%;
+    max-width: 400px;
     text-align: center;
     background-color: #e0e5ec;
     padding: 2rem;
