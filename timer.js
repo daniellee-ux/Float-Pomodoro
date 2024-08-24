@@ -20,6 +20,7 @@ let isTimerRunning = false;
 let lastUpdateTime;
 let animationFrameId;
 let intervalId;
+let worker;
 
 startButton.addEventListener('click', startCountdown);
 pauseButton.addEventListener('click', togglePause);
@@ -56,37 +57,35 @@ function startCountdown() {
     updateTimerDisplay();
 
     isTimerRunning = true;
-    lastUpdateTime = Date.now();
-    startPictureInPicture();
     startButton.disabled = true;
     pauseButton.disabled = false;
     stopButton.disabled = false;
 
-    updateTimer();
-}
-
-function updateTimer() {
-    if (isTimerRunning && !isPaused) {
-        const currentTime = Date.now();
-        const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
-        lastUpdateTime = currentTime;
-
-        remainingTime -= deltaTime;
-        if (remainingTime <= 0) {
+    if (worker) {
+        worker.terminate();
+    }
+    worker = new Worker('timerWorker.js');
+    worker.onmessage = function(e) {
+        if (e.data.finished) {
             stopCountdown();
             alert('Countdown finished!');
-            return;
+        } else {
+            remainingTime = e.data.remainingTime;
+            updateTimerDisplay();
         }
-        updateTimerDisplay();
-    }
-    animationFrameId = requestAnimationFrame(updateTimer);
+    };
+    worker.postMessage({ action: 'start', time: totalTime });
+
+    startPictureInPicture();
 }
 
 function togglePause() {
     isPaused = !isPaused;
     pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
-    if (!isPaused) {
-        lastUpdateTime = Date.now();
+    if (isPaused) {
+        worker.postMessage({ action: 'pause' });
+    } else {
+        worker.postMessage({ action: 'resume' });
     }
 }
 
@@ -102,8 +101,11 @@ function stopCountdown() {
     if (document.pictureInPictureElement) {
         document.exitPictureInPicture();
     }
-    cancelAnimationFrame(animationFrameId);
-    clearInterval(intervalId);
+    if (worker) {
+        worker.postMessage({ action: 'stop' });
+        worker.terminate();
+        worker = null;
+    }
 }
 
 function updateTimerDisplay() {
@@ -191,38 +193,18 @@ async function startPictureInPicture() {
 
     try {
         await pipVideo.requestPictureInPicture();
+        // Start a loop to keep updating the PiP window
+        function updatePiP() {
+            if (document.pictureInPictureElement) {
+                drawCountdown();
+                requestAnimationFrame(updatePiP);
+            }
+        }
+        updatePiP();
     } catch (error) {
         console.error('Failed to enter Picture-in-Picture mode:', error);
     }
 }
-
-document.addEventListener("visibilitychange", function() {
-    if (document.hidden && isTimerRunning) {
-        cancelAnimationFrame(animationFrameId);
-        clearInterval(intervalId);
-        lastUpdateTime = Date.now();
-        intervalId = setInterval(() => {
-            if (isTimerRunning && !isPaused) {
-                const currentTime = Date.now();
-                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
-                lastUpdateTime = currentTime;
-
-                remainingTime -= deltaTime;
-                if (remainingTime <= 0) {
-                    stopCountdown();
-                    alert('Countdown finished!');
-                    return;
-                }
-                updateTimerDisplay();
-                drawCountdown(); // Ensure the canvas is updated
-            }
-        }, 1000);
-    } else {
-        lastUpdateTime = Date.now();
-        clearInterval(intervalId);
-        animationFrameId = requestAnimationFrame(updateTimer);
-    }
-});
 
 minutesInput.value = '25';
 secondsInput.value = '00';
