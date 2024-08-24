@@ -22,7 +22,7 @@ body {
 header {
     width: 100%;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 }
 
 .container {
@@ -33,6 +33,7 @@ header {
     box-shadow: 
         8px 8px 15px #a3b1c6, 
         -8px -8px 15px #ffffff;
+    margin-bottom: 40px;
 }
 h1 {
     margin-bottom: 1rem;
@@ -160,11 +161,15 @@ canvas {
         -5px -5px 10px #ffffff;
 }
 footer {
-    width: 100%;
+    width: 100vw; /* Use the full viewport width */
     text-align: center;
-    margin-top: 20px;
+    margin-top: 40px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
 }
 .author {
+    display: inline-block;
     font-size: 0.8rem;
     color: #a0a0a0;
 }
