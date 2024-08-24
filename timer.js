@@ -16,7 +16,7 @@ let remainingTime;
 let totalTime;
 let isPaused = false;
 let currentTab = 'numeric';
-let isTimerRunning = false;
+let isTimerRunning = false;MINIMAL_VIDEO_DATA
 let lastUpdateTime;
 let animationFrameId;
 let intervalId;
