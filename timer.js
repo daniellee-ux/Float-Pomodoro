@@ -158,7 +158,7 @@ function drawCountdown() {
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius - 2, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, radius - 2, 0, 2* Math.PI);
         ctx.fillStyle = '#d1d9e6';
         ctx.fill();
 
@@ -171,7 +171,7 @@ function drawCountdown() {
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius - 15, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, radius - 15, 0, 2* Math.PI);
         ctx.fillStyle = '#e0e5ec';
         ctx.fill();
 
@@ -185,32 +185,21 @@ function drawCountdown() {
 
 async function startPictureInPicture() {
     if (document.pictureInPictureElement) {
-        document.exitPictureInPicture().catch(error => {
-            console.error('Failed to exit Picture-in-Picture mode:', error);
-        });
+        await document.exitPictureInPicture().catch(console.error);
     }
 
     drawCountdown();
     const stream = canvas.captureStream();
     pipVideo.srcObject = stream;
-    pipVideo.play().catch(error => {
-        console.error('Failed to play video:', error);
-    });
+    await pipVideo.play().catch(console.error);
 
     try {
         if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === "function") {
             // Safari
-            pipVideo.webkitSetPresentationMode("picture-in-picture");
+            await pipVideo.webkitSetPresentationMode("picture-in-picture");
         } else {
             // Chrome, Edge, and other browsers
-            pipVideo.requestPictureInPicture();
-        }
-        // Start a loop to keep updating the PiP window
-        function updatePiP() {
-            if (document.pictureInPictureElement || pipVideo.webkitPresentationMode === "picture-in-picture") {
-                drawCountdown();
-                requestAnimationFrame(updatePiP);
-            }
+            await pipVideo.requestPictureInPicture();
         }
         updatePiP();
     } catch (error) {
@@ -218,9 +207,18 @@ async function startPictureInPicture() {
     }
 }
 
+function updatePiP() {
+    if (document.pictureInPictureElement || 
+        (pipVideo.webkitPresentationMode && pipVideo.webkitPresentationMode === "picture-in-picture")) {
+        drawCountdown();
+        requestAnimationFrame(updatePiP);
+    }
+}
+
 pipVideo.addEventListener('webkitpresentationmodechanged', (event) => {
     if (event.target.webkitPresentationMode === "picture-in-picture") {
         console.log("Entered PiP mode in Safari");
+        updatePiP();
     } else if (event.target.webkitPresentationMode === "inline") {
         console.log("Exited PiP mode in Safari");
     }
