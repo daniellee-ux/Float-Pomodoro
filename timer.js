@@ -192,43 +192,57 @@ async function startPictureInPicture() {
 
     console.log('Drawing countdown');
     drawCountdown();
+    
+    // Ensure the canvas has content before capturing
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const stream = canvas.captureStream(30);
-    console.log('Stream created:', stream);
+    console.log('Stream tracks:', stream.getTracks());
+    
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+        console.log('Video track settings:', videoTrack.getSettings());
+    } else {
+        console.error('No video track found in the stream');
+    }
+    
     pipVideo.srcObject = stream;
     console.log('Stream set to video element');
     
     try {
         await pipVideo.play();
         console.log('Video playback started');
-    } catch (error) {
-        console.error('Error starting video playback:', error);
-    }
+        
+        // Wait a short time to ensure video is actually playing
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-    try {
         if (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === "function") {
             console.log('Using Safari PiP mode');
+            drawCountdown(); // Force a redraw
             await pipVideo.webkitSetPresentationMode("picture-in-picture");
             console.log('Safari PiP mode activated');
-            setTimeout(() => {
-                console.log('Forcing update after Safari PiP activation');
-                drawCountdown();
-                updatePiP();
-            }, 100);
         } else {
             console.log('Using standard PiP mode');
             await pipVideo.requestPictureInPicture();
             console.log('Standard PiP mode activated');
         }
-        updatePiP();
+        
+        // Force an update after entering PiP mode
+        setTimeout(() => {
+            console.log('Forcing update after PiP activation');
+            drawCountdown();
+            updatePiP();
+        }, 100);
     } catch (error) {
-        console.error('Failed to enter Picture-in-Picture mode:', error);
+        console.error('Error starting video playback:', error);
     }
 }
 
 function updatePiP() {
+    console.log('updatePiP called');
     if (document.pictureInPictureElement || 
         (pipVideo.webkitPresentationMode && pipVideo.webkitPresentationMode === "picture-in-picture")) {
-        console.log('Updating PiP');
+        console.log('PiP is active, updating');
         drawCountdown();
         requestAnimationFrame(updatePiP);
     } else {
@@ -236,56 +250,7 @@ function updatePiP() {
     }
 }
 
-function drawCountdown() {
-    console.log('Drawing countdown, current time:', remainingTime);
-    canvas.width = 200;
-    canvas.height = 200;
-    ctx.fillStyle = '#e0e5ec';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    if (currentTab === 'numeric') {
-        ctx.fillStyle = '#4a4a4a';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(countdownDisplay.textContent, canvas.width / 2, canvas.height / 2);
-    } else {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = 90;
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#f0f5fc';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius - 2, 0, 2* Math.PI);
-        ctx.fillStyle = '#d1d9e6';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        const progress = 1 - (remainingTime / totalTime);
-        ctx.arc(centerX, centerY, radius - 5, -Math.PI / 2, (-Math.PI / 2) + (2 * Math.PI * progress), true);
-        ctx.lineTo(centerX, centerY);
-        ctx.fillStyle = 'red';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius - 15, 0, 2* Math.PI);
-        ctx.fillStyle = '#e0e5ec';
-        ctx.fill();
-
-        ctx.fillStyle = '#4a4a4a';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(timeTimerOverlay.textContent, centerX, centerY);
-    }
-    console.log('Countdown drawn');
-}
-
+// Ensure this event listener is present
 pipVideo.addEventListener('webkitpresentationmodechanged', (event) => {
     console.log('Presentation mode changed:', event.target.webkitPresentationMode);
     if (event.target.webkitPresentationMode === "picture-in-picture") {
