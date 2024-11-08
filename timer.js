@@ -48,10 +48,15 @@ function updatePreview() {
 function startCountdown() {
     const minutes = parseInt(minutesInput.value) || 0;
     const seconds = parseInt(secondsInput.value) || 0;
+    
     if (minutes === 0 && seconds === 0) {
         alert('Please enter a valid time.');
         return;
     }
+
+    // Reset states
+    isPaused = false;
+    pauseButton.textContent = 'Pause';
 
     totalTime = remainingTime = minutes * 60 + seconds;
     updateTimerDisplay();
@@ -61,9 +66,12 @@ function startCountdown() {
     pauseButton.disabled = false;
     stopButton.disabled = false;
 
+    // Clean up existing worker if any
     if (worker) {
         worker.terminate();
     }
+    
+    // Create new worker
     worker = new Worker('timerWorker.js');
     worker.onmessage = function(e) {
         if (e.data.finished) {
@@ -74,63 +82,45 @@ function startCountdown() {
             updateTimerDisplay();
         }
     };
+    
+    // Start the timer
     worker.postMessage({ action: 'start', time: totalTime });
-
     startPictureInPicture();
 }
 
 function togglePause() {
+    if (!isTimerRunning || !worker) return;
+
     isPaused = !isPaused;
     pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
-
-    if (isPaused) {
-        // Pause the worker and clear the interval
-        worker.postMessage({ action: 'pause' });
-        clearInterval(intervalId); // Stop the interval when paused
-    } else {
-        // Resume the worker and start the interval
-        worker.postMessage({ action: 'resume' });
-        lastUpdateTime = Date.now(); // Reset lastUpdateTime to resume correctly
-
-        // Ensure the interval is set only if the timer is running
-        if (isTimerRunning) {
-            intervalId = setInterval(() => {
-                const currentTime = Date.now();
-                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
-                lastUpdateTime = currentTime;
-
-                remainingTime -= deltaTime;
-                if (remainingTime <= 0) {
-                    stopCountdown();
-                    alert('Countdown finished!');
-                    return;
-                }
-                updateTimerDisplay();
-                drawCountdown(); // Ensure the canvas is updated
-            }, 1000); // Restart the interval when resuming
-        }
-    }
+    
+    // Send appropriate message to worker
+    worker.postMessage({ action: isPaused ? 'pause' : 'resume' });
 }
 
 function stopCountdown() {
+    if (!worker) return;
+    
     isTimerRunning = false;
+    isPaused = false;
     remainingTime = totalTime;
     updateTimerDisplay();
+    
     startButton.disabled = false;
     pauseButton.disabled = true;
     stopButton.disabled = true;
-    isPaused = false;
     pauseButton.textContent = 'Pause';
+    
     if (document.pictureInPictureElement) {
         document.exitPictureInPicture();
     } else if (pipVideo.webkitPresentationMode === "picture-in-picture") {
         pipVideo.webkitSetPresentationMode("inline");
     }
-    if (worker) {
-        worker.postMessage({ action: 'stop' });
-        worker.terminate();
-        worker = null;
-    }
+    
+    // Clean up worker
+    worker.postMessage({ action: 'stop' });
+    worker.terminate();
+    worker = null;
 }
 
 function updateTimerDisplay() {
