@@ -82,16 +82,21 @@ function startCountdown() {
 function togglePause() {
     isPaused = !isPaused;
     pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+
     if (isPaused) {
+        // Pause the worker and clear the interval
         worker.postMessage({ action: 'pause' });
-        clearInterval(intervalId);
+        clearInterval(intervalId); // Stop the interval when paused
     } else {
+        // Resume the worker and start the interval
         worker.postMessage({ action: 'resume' });
-        lastUpdateTime = Date.now();
-        intervalId = setInterval(() => {
-            if (isTimerRunning && !isPaused) {
+        lastUpdateTime = Date.now(); // Reset lastUpdateTime to resume correctly
+
+        // Ensure the interval is set only if the timer is running
+        if (isTimerRunning) {
+            intervalId = setInterval(() => {
                 const currentTime = Date.now();
-                const deltaTime = (currentTime - lastUpdateTime) / 1000;
+                const deltaTime = (currentTime - lastUpdateTime) / 1000; // Convert to seconds
                 lastUpdateTime = currentTime;
 
                 remainingTime -= deltaTime;
@@ -101,9 +106,9 @@ function togglePause() {
                     return;
                 }
                 updateTimerDisplay();
-                drawCountdown();
-            }
-        }, 1000);
+                drawCountdown(); // Ensure the canvas is updated
+            }, 1000); // Restart the interval when resuming
+        }
     }
 }
 
