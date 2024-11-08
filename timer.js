@@ -84,8 +84,26 @@ function togglePause() {
     pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
     if (isPaused) {
         worker.postMessage({ action: 'pause' });
+        clearInterval(intervalId);
     } else {
         worker.postMessage({ action: 'resume' });
+        lastUpdateTime = Date.now();
+        intervalId = setInterval(() => {
+            if (isTimerRunning && !isPaused) {
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - lastUpdateTime) / 1000;
+                lastUpdateTime = currentTime;
+
+                remainingTime -= deltaTime;
+                if (remainingTime <= 0) {
+                    stopCountdown();
+                    alert('Countdown finished!');
+                    return;
+                }
+                updateTimerDisplay();
+                drawCountdown();
+            }
+        }, 1000);
     }
 }
 
