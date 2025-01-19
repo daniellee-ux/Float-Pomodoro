@@ -1,7 +1,6 @@
 const minutesInput = document.getElementById('minutes');
 const secondsInput = document.getElementById('seconds');
 const startButton = document.getElementById('startButton');
-const pauseButton = document.getElementById('pauseButton');
 const stopButton = document.getElementById('stopButton');
 const countdownDisplay = document.getElementById('countdown');
 const pipVideo = document.getElementById('pipVideo');
@@ -23,7 +22,6 @@ let intervalId;
 let worker;
 
 startButton.addEventListener('click', startCountdown);
-pauseButton.addEventListener('click', togglePause);
 stopButton.addEventListener('click', stopCountdown);
 
 minutesInput.addEventListener('input', updatePreview);
@@ -56,14 +54,12 @@ function startCountdown() {
 
     // Reset states
     isPaused = false;
-    pauseButton.textContent = 'Pause';
 
     totalTime = remainingTime = minutes * 60 + seconds;
     updateTimerDisplay();
 
     isTimerRunning = true;
     startButton.disabled = true;
-    pauseButton.disabled = false;
     stopButton.disabled = false;
 
     // Clean up existing worker if any
@@ -88,16 +84,6 @@ function startCountdown() {
     startPictureInPicture();
 }
 
-function togglePause() {
-    if (!isTimerRunning || !worker) return;
-
-    isPaused = !isPaused;
-    pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
-    
-    // Send appropriate message to worker
-    worker.postMessage({ action: isPaused ? 'pause' : 'resume' });
-}
-
 function stopCountdown() {
     if (!worker) return;
     
@@ -107,9 +93,7 @@ function stopCountdown() {
     updateTimerDisplay();
     
     startButton.disabled = false;
-    pauseButton.disabled = true;
     stopButton.disabled = true;
-    pauseButton.textContent = 'Pause';
     
     if (document.pictureInPictureElement) {
         document.exitPictureInPicture();
@@ -300,12 +284,6 @@ startButton.addEventListener('click', () => {
     console.log('Start button clicked');
     logState();
     startCountdown();
-});
-
-pauseButton.addEventListener('click', () => {
-    console.log('Pause button clicked');
-    logState();
-    togglePause();
 });
 
 stopButton.addEventListener('click', () => {
